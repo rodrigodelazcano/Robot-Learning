@@ -10,6 +10,7 @@
 # * Sample function at 100 evenly spaced points (70 for training and 30 for testing)
 # NOTE: Report accuracy of CMAC only with the 30 test points
 
+from cProfile import label
 from random import sample
 import numpy as np
 import time
@@ -41,7 +42,7 @@ def main():
     test_sp = sample_points[70:]
 
     # Hyper-parameters
-    n_weights = 3
+    n_weights = 4
     generalization_factors = np.linspace(1, n_weights, n_weights, dtype=int)
     alpha = 1
 
@@ -62,7 +63,7 @@ def main():
             if gen >= s_over:
                 discrete_model_buffer[model_key] = \
                     DiscreteCMAC(train_samples=training_sp, test_samples=test_sp, train_function=training_function,
-                                    n_weights=n_weights, gen_factor=gen, overlap=overlap)
+                                    n_weights=n_weights, gen_factor=gen, overlap=overlap, mse_threshold=0.003)
 
                 mse, training_duration = discrete_model_buffer[model_key].train()
                 metric_dict['overlap'] = overlap
@@ -70,10 +71,28 @@ def main():
                 metric_dict['time'] = training_duration
 
                 discrete_metrics.save_accuracy(metric_dict)
-        
-    discrete_metrics.get_minimum_mse()
+    
+    # Plot results
+    print("\n\n")
+    print('RESULTS FOR DISCRETE CMAC')  
     discrete_metrics.plot_accuracy()
     discrete_metrics.plot_training_duration()
+    discrete_metrics.plot_surface_map_mse()
+    print("--------------------------")
+    print("Best Accuracy Score:")
+    disc_gen_min_mse, disc_overlap_min_mse, _ = discrete_metrics.get_minimum_mse()
+    print("--------------------------")
+    print("Worst Accuracy Score:")
+    _,_,_ = discrete_metrics.get_maximum_mse()
+    print("--------------------------")
+    print("Best Time Score:")
+    gen_min_time,_,_ = discrete_metrics.get_maximum_traning_time()
+    print("--------------------------")
+    print("Worst Time Score:")
+    _,_,_ = discrete_metrics.get_maximum_traning_time()
+    discrete_metrics.plot_accuracy_accross_overlaps(n_weights, disc_gen_min_mse)
+    discrete_metrics.plot_training_time_accross_overlaps(n_weights, gen_min_time)
+    print("\n\n")
 
     # Training for continuous models
     continuous_metrics = Metrics()
@@ -90,7 +109,7 @@ def main():
                 model_key = (n_weights, gen, overlap)
                 continuous_model_buffer[model_key] = \
                     ContinuousCMAC(train_samples=training_sp, test_samples=test_sp, train_function=training_function,
-                                    n_weights=n_weights, gen_factor=gen, overlap=overlap)
+                                    n_weights=n_weights, gen_factor=gen, overlap=overlap, mse_threshold=0.003)
 
                 mse, training_duration = continuous_model_buffer[model_key].train()
                 metric_dict['mse'] = mse
@@ -98,9 +117,56 @@ def main():
 
                 continuous_metrics.save_accuracy(metric_dict)
 
+    # Plot results
+    print("\n\n")
+    print('RESULTS FOR CONTINUOUS CMAC')  
     continuous_metrics.plot_accuracy()
     continuous_metrics.plot_training_duration()
     continuous_metrics.plot_surface_map_mse()
+    print("--------------------------")
+    print("Best Accuracy Score:")
+    cont_gen_min_mse, cont_overlap_min_mse, _ = continuous_metrics.get_minimum_mse()
+    print("--------------------------")
+    print("Worst Accuracy Score:")
+    _,_,_ = continuous_metrics.get_maximum_mse()
+    print("--------------------------")
+    print("Best Time Score:")
+    gen_min_time,_,_ = continuous_metrics.get_maximum_traning_time()
+    print("--------------------------")
+    print("Worst Time Score:")
+    _,_,_ = continuous_metrics.get_maximum_traning_time()
+    continuous_metrics.plot_accuracy_accross_overlaps(n_weights, cont_gen_min_mse)
+    continuous_metrics.plot_training_time_accross_overlaps(n_weights, gen_min_time)
+    print("\n\n")
+
+    sample_points = np.linspace(0, 2*np.pi, 1000)
+
+    discrete_predicted = []
+    continuous_predicted =[]
+    real_values = []
+
+    for sample in list(sample_points):
+        real_values.append(training_function(sample))
+        discrete_predicted.append(discrete_model_buffer[(n_weights, disc_gen_min_mse, disc_overlap_min_mse)].predict(sample))
+        continuous_predicted.append(continuous_model_buffer[(n_weights, cont_gen_min_mse, cont_overlap_min_mse)].predict(sample))
+
+    fig = plt.figure()        
+    sns.set_style('darkgrid')
+    fig.suptitle('Continuous CMAC, gen factor=' + str(cont_gen_min_mse) + ',overlap=' + str(cont_overlap_min_mse), fontsize=20)
+    plt.xlabel('x', fontsize=18)
+    plt.ylabel('y', fontsize=16)
+    plt.plot(sample_points, real_values, label='real values')
+    plt.plot(sample_points, continuous_predicted, label='discrete cmac prediction')
+    fig.legend()
+
+    fig = plt.figure()        
+    sns.set_style('darkgrid')
+    fig.suptitle('Discrete CMAC, gen factor=' + str(disc_gen_min_mse) + ',overlap=' + str(disc_overlap_min_mse), fontsize=20)
+    plt.xlabel('x', fontsize=18)
+    plt.ylabel('y', fontsize=16)
+    plt.plot(sample_points, real_values, label='real values')
+    plt.plot(sample_points, discrete_predicted, label='discrete cmac prediction')
+    fig.legend()
 
     plt.show() 
 

@@ -78,10 +78,8 @@ class CMAC:
             association_idx -= 1
         association_vector = self.assoc_matrix[association_idx,:]    
         y_pred = np.matmul(self.weights, association_vector)
-        y = self.training_function(sample)
-        error = y - y_pred
 
-        return y_pred, error
+        return y_pred
 
 class DiscreteCMAC(CMAC):
     def __init__(self, train_samples, test_samples, train_function, 
@@ -100,7 +98,7 @@ class ContinuousCMAC(CMAC):
     def __init__(self, train_samples, test_samples, train_function, 
                  n_weights, gen_factor, overlap, n_epochs=10000, alpha=1, mse_threshold=0.001) -> None:       
         self.possible_s_over = [1, 2, 3, 4, 5, 6]
-        
+
         super(ContinuousCMAC, self).__init__(train_samples, test_samples, train_function, 
                  n_weights, gen_factor, overlap, n_epochs, alpha, mse_threshold)
     
