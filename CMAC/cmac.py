@@ -98,12 +98,11 @@ class DiscreteCMAC(CMAC):
 
 class ContinuousCMAC(CMAC):
     def __init__(self, train_samples, test_samples, train_function, 
-                 n_weights, gen_factor, overlap, n_epochs=10000, alpha=1, mse_threshold=0.001) -> None:
+                 n_weights, gen_factor, overlap, n_epochs=10000, alpha=1, mse_threshold=0.001) -> None:       
+        self.possible_s_over = [1, 2, 3, 4, 5, 6]
         
         super(ContinuousCMAC, self).__init__(train_samples, test_samples, train_function, 
                  n_weights, gen_factor, overlap, n_epochs, alpha, mse_threshold)
-
-        self.possible_s_over = [1, 2, 3, 4, 5, 6]
     
     def _initialize_association_matrix(self):
         super()._initialize_association_matrix()

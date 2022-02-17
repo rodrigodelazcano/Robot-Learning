@@ -16,6 +16,7 @@ import time
 import math
 import seaborn as sns
 from tqdm import tqdm
+from matplotlib import cm
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
@@ -33,15 +34,18 @@ class Metrics:
         self.gen_facts, self.overlaps = np.meshgrid(self.gen_facts, self.overlaps)
         self.mse = np.zeros((35,35))
         self.accuracies = defaultdict(lambda: defaultdict(dict))
+        self.training_times = defaultdict(lambda: defaultdict(dict))
+    
     def save_accuracy(self, metric):
         n_weights = metric['n_weights']
         gen_factor = metric['gen_factor']
         overlap = metric['overlap']
         self.accuracies[n_weights][gen_factor][overlap] = metric['mse']
-
-        
+        self.training_times[n_weights][gen_factor][overlap] = metric['time']
         self.mse[gen_factor, overlap] = metric['mse']
-    def plot_accuracy(self):        
+
+    def plot_accuracy(self):
+        plt.figure()        
         sns.set_style('darkgrid')
         min_accuracy = []
         min_overlaps = []
@@ -60,11 +64,36 @@ class Metrics:
                 min_accuracy.append(min_mse)
                 min_overlaps.append(overlaps[min_mse_idx])
         plt.bar(gen_factors, min_mse)
-        plt.show()
+    
+    def plot_training_duration(self):
+        plt.figure()        
+        sns.set_style('darkgrid')
+        min_time = []
+        min_trainig_time = []
+        min_overlaps = []
+        gen_factors = []
+        for n_weights, weight_values in self.training_times.items():
+            for gen_factor, gen_f_values in weight_values.items():
+                overlaps = []
+                time = []
+                gen_factors.append(gen_factor)
+                for overlap, time_value in gen_f_values.items():
+                    overlaps.append(overlap)
+                    time.append(time_value)
+                min_time.append(min(time))
+                min_time_idx = time.index(min_time[-1])
+                min_trainig_time.append(min_time)
+                min_overlaps.append(overlaps[min_time_idx])
+        plt.bar(gen_factors, min_time)
 
-    def plot_accuracy_surface(self):
-        ax = sns.heatmap(self.mse, linewidth=0.5)      
-        plt.show()
+    def plot_accuracy_heatmap(self):
+        ax = sns.heatmap(self.mse, linewidth=0.5)
+
+    def plot_surface_map_mse(self):
+        plt.figure()
+        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+        surf = ax.plot_surface(self.gen_facts, self.overlaps, self.mse, cmap=cm.coolwarm,
+                       linewidth=0, antialiased=False)   
     
     def get_minimum_mse(self):
         min_accuracy = []
@@ -89,10 +118,98 @@ class Metrics:
         global_overlap_min = min_overlaps[global_mse_min_idx]
         global_gen_min = gen_factors[global_mse_min_idx]
 
-        print('BEST RESULT: ')
-        print('\t Gen Factor: ', global_gen_min)
+        print('\tGen Factor: ', global_gen_min)
         print('\tOverlap: {}'.format(global_overlap_min))
         print('\tMSE: {}'.format(global_mse_min))
+
+        return global_gen_min, global_overlap_min, global_mse_min
+    
+    def get_maximum_mse(self):
+        max_accuracy = []
+        max_overlaps = []
+        max_mse = []
+        gen_factors = []
+        for n_weights, weight_values in self.accuracies.items():
+            for gen_factor, gen_f_values in weight_values.items():
+                overlaps = []
+                mse = []
+                gen_factors.append(gen_factor)
+                for overlap, mse_value in gen_f_values.items():
+                    overlaps.append(overlap)
+                    mse.append(mse_value)
+                max_mse.append(max(mse))
+                max_mse_idx = mse.index(max_mse[-1])
+                max_accuracy.append(max_mse)
+                max_overlaps.append(overlaps[max_mse_idx])
+        
+        global_mse_max = max(max_mse)
+        global_mse_max_idx = mse.index(global_mse_max)
+        global_overlap_max = max_overlaps[global_mse_max_idx]
+        global_gen_max = gen_factors[global_mse_max_idx]
+
+        print('\tGen Factor: ', global_gen_max)
+        print('\tOverlap: {}'.format(global_overlap_max))
+        print('\tMSE: {}'.format(global_mse_max))
+
+        return global_gen_max, global_overlap_max, global_mse_max
+
+    def get_minimum_training_time(self):
+        min_training_time = []
+        min_overlaps = []
+        min_time = []
+        gen_factors = []
+        for n_weights, weight_values in self.accuracies.items():
+            for gen_factor, gen_f_values in weight_values.items():
+                overlaps = []
+                time = []
+                gen_factors.append(gen_factor)
+                for overlap, mse_value in gen_f_values.items():
+                    overlaps.append(overlap)
+                    time.append(mse_value)
+                min_time.append(min(time))
+                min_time_idx = time.index(min_time[-1])
+                min_training_time.append(min_time)
+                min_overlaps.append(overlaps[min_time_idx])
+        
+        global_time_min = min(min_time)
+        global_time_min_idx = time.index(global_time_min)
+        global_overlap_min = min_overlaps[global_time_min_idx]
+        global_gen_min = gen_factors[global_time_min_idx]
+
+        print('\tGen Factor: ', global_gen_min)
+        print('\tOverlap: {}'.format(global_overlap_min))
+        print('\tTime: {} seconds'.format(global_time_min))
+    
+        return global_gen_min, global_overlap_min, global_time_min
+
+    def get_maximum_traning_time(self):
+        min_training_time = []
+        min_overlaps = []
+        min_time = []
+        gen_factors = []
+        for n_weights, weight_values in self.accuracies.items():
+            for gen_factor, gen_f_values in weight_values.items():
+                overlaps = []
+                time = []
+                gen_factors.append(gen_factor)
+                for overlap, mse_value in gen_f_values.items():
+                    overlaps.append(overlap)
+                    time.append(mse_value)
+                min_time.append(min(time))
+                min_time_idx = time.index(min_time[-1])
+                min_training_time.append(min_time)
+                min_overlaps.append(overlaps[min_time_idx])
+        
+        global_time_min = min(min_time)
+        global_time_min_idx = time.index(global_time_min)
+        global_overlap_min = min_overlaps[global_time_min_idx]
+        global_gen_min = gen_factors[global_time_min_idx]
+
+        print('\tGen Factor: ', global_gen_min)
+        print('\tOverlap: {}'.format(global_overlap_min))
+        print('\tTime: {} seconds'.format(global_time_min))
+    
+        return global_gen_min, global_overlap_min, global_time_min
 
 
 
@@ -110,149 +227,68 @@ def main():
     test_sp = sample_points[70:]
 
     # Hyper-parameters
-    n_weights = 35
+    n_weights = 3
     generalization_factors = np.linspace(1, n_weights, n_weights, dtype=int)
     alpha = 1
-    
-    # Overlaping in association matrix
-    # Can we do overlapping
-    # Quantization of input data
-    # How much overlapping is possible
-    # spare weights = n_weights - generalization_factor
-    
-    # 1 -> no overlapping
-    # 2 -> 35/2 = 
-    # Create a list of generalization factor's that make num weights divisible
-    # overlap = generalization_factor - spare_overlap
-    # quantized_input = n_weights/spare_overlap
 
-    discrete_metrics = Metrics()
-    accuracy_metric_dict = {}
-    accuracy_metric_dict['n_weights'] = n_weights
-
-    discrete_model_buffer = {}
+    metric_dict = {}
+    metric_dict['n_weights'] = n_weights
 
     # Training of discrete models
+    discrete_metrics = Metrics()
+    discrete_model_buffer = {}
     for gen in tqdm(range(1,n_weights+1)):
-        accuracy_metric_dict['gen_factor'] = gen
+        metric_dict['gen_factor'] = gen
         n_spare_weights = n_weights - gen
         spare_overlaps = list(filter(lambda x: (n_spare_weights % x == 0),
                                  np.linspace(1, n_spare_weights, n_spare_weights, dtype=int)))
         for s_over in spare_overlaps:
             overlap = gen - s_over
             model_key = (n_weights, gen, overlap)
-            discrete_model_buffer[model_key] = \
-                DiscreteCMAC(train_samples=training_sp, test_samples=test_sp, train_function=training_function,
-                                n_weights=n_weights, gen_factor=gen, overlap=overlap)
+            if gen >= s_over:
+                discrete_model_buffer[model_key] = \
+                    DiscreteCMAC(train_samples=training_sp, test_samples=test_sp, train_function=training_function,
+                                    n_weights=n_weights, gen_factor=gen, overlap=overlap)
 
-            mse, training_duration = discrete_model_buffer[model_key].train()
-    
+                mse, training_duration = discrete_model_buffer[model_key].train()
+                metric_dict['overlap'] = overlap
+                metric_dict['mse'] = mse
+                metric_dict['time'] = training_duration
+
+                discrete_metrics.save_accuracy(metric_dict)
+        
+    discrete_metrics.get_minimum_mse()
+    discrete_metrics.plot_accuracy()
+    discrete_metrics.plot_training_duration()
+
     # Training for continuous models
+    continuous_metrics = Metrics()
+    continuous_model_buffer = {}
     possible_s_over = [1, 2, 3, 4, 5, 6]
     for gen in tqdm(range(1,n_weights+1)):
-        accuracy_metric_dict['gen_factor'] = gen
+        metric_dict['gen_factor'] = gen
         n_spare_weights = n_weights - gen
         spare_overlaps = list(filter(lambda x: (n_spare_weights % x == 0),
                                  np.linspace(1, n_spare_weights, n_spare_weights, dtype=int)))
         for s_over in spare_overlaps:
             overlap = gen - s_over
-            model_key = (n_weights, gen, overlap)
-            discrete_model_buffer[model_key] = \
-                ContinuousCMAC(train_samples=training_sp, test_samples=test_sp, train_function=training_function,
-                                n_weights=n_weights, gen_factor=gen, overlap=overlap)
+            if gen >= s_over and overlap !=0 and s_over in possible_s_over:
+                model_key = (n_weights, gen, overlap)
+                continuous_model_buffer[model_key] = \
+                    ContinuousCMAC(train_samples=training_sp, test_samples=test_sp, train_function=training_function,
+                                    n_weights=n_weights, gen_factor=gen, overlap=overlap)
 
-            mse = discrete_model_buffer[model_key].train()
+                mse, training_duration = continuous_model_buffer[model_key].train()
+                metric_dict['mse'] = mse
+                metric_dict['time'] = training_duration
 
+                continuous_metrics.save_accuracy(metric_dict)
 
-    # Create association encoding map
-    # for gen in tqdm(range(1,n_weights+1)):
-    #     accuracy_metric_dict['gen_factor'] = gen
-    #     n_spare_weights = n_weights - gen
-    #     spare_overlaps = list(filter(lambda x: (n_spare_weights % x == 0),
-    #                              np.linspace(1, n_spare_weights, n_spare_weights, dtype=int)))
-        
-    #     for s_over in spare_overlaps:
-    #         # Reinitialize parameters
-    #         weights = np.ones(n_weights)
-    #         epoch = 0
-    #         mse = np.inf
-    #         if gen >= s_over:
-    #             overlap = gen - s_over
-    #             accuracy_metric_dict['overlap'] = overlap
-    #             quantized_input = int((n_spare_weights/s_over) + 1)
-    #             quantization_step = (max_sp-min_sp)/quantized_input
-    #             assoc_matrix = np.zeros((quantized_input, n_weights))
-    #             for idx in range(assoc_matrix.shape[0]):
-    #                 assoc_matrix[idx,idx*s_over:idx*s_over+gen] = 1
+    continuous_metrics.plot_accuracy()
+    continuous_metrics.plot_training_duration()
+    continuous_metrics.plot_surface_map_mse()
 
-    #             while (epoch < n_epochs) and (mse > e_threshold):
-    #                 # Re-shuffle training samples
-    #                 np.random.shuffle(training_sp)
-    #                 for sample in training_sp:
-    #                     association_idx = math.floor((sample+abs(min_sp))/quantization_step)
-    #                     if association_idx == quantized_input:
-    #                         association_idx -= 1
-    #                     association_vector = assoc_matrix[association_idx,:]
-    #                     y_pred = np.matmul(weights, association_vector)
-    #                     y = training_function(sample)
-    #                     error = y - y_pred
-    #                     correction = association_vector * (alpha * error / gen)
-    #                     weights += correction
-    #                 epoch += 1
-    #                     # print(correction)
-
-
-    #                 # Check for early stopping every 5 epochs
-    #                 if epoch % 5 == 0:
-    #                     # Compute mean square error for testing samples
-    #                     cumulative_square_error = 0
-    #                     for sample in test_sp:
-    #                         association_idx = math.floor((sample+abs(min_sp))/quantization_step)
-    #                         if association_idx == quantized_input:
-    #                             association_idx -= 1
-    #                         association_vector = assoc_matrix[association_idx,:]
-    #                         y_pred = np.matmul(weights, association_vector)
-    #                         y = training_function(sample)
-    #                         cumulative_square_error += math.pow((y - y_pred), 2)
-                        
-    #                     mse = cumulative_square_error/len(test_sp)
-                
-    #             accuracy_metric_dict['mse'] = mse
-
-    #             discrete_metrics.save_accuracy(accuracy_metric_dict)
-        
-    #             print('--------------------------')
-    #             print('GENERALIZATION FACTOR: ', gen)
-    #             print('OVERLAP: ', overlap)
-    #             # print('NUMBER OF QUANTILES: ', quantized_input)
-    #             # print('NUMBER OF EPOCHS: ', epoch)
-    #             print('FINAL ACCURACY: ', mse)
-
-    # discrete_metrics.get_minimum_mse()
-    # discrete_metrics.plot_accuracy()
-    # time_start = time.perf_counter()
-
-    # Training algorithm
-
-    # print("Time to converge: {}".format(time.perf_counter()-time_start))
-
-    # Print results
-
-    ### CONTINUOUS ###
-
-    # association vector elements have to sum up to generalization factor
-    # overlap values 1
-
-    # Parameters: gen_fact, overlap, weights
-
-    # Create association matrix, quatize input as with discrete version.
-    # The elements of the association vector for each quantile has to sum up to the generalization factor.
-    # Overlap values equal to 1 the rest lower than 1 (proportions). Always satisfying the previous rule.
-
-    
-
-    
-     
+    plt.show() 
 
 if __name__ == "__main__":
     main()
