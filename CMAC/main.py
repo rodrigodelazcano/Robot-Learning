@@ -23,7 +23,7 @@ from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 from matplotlib import colors
 from collections import defaultdict
-from cmac import DiscreteCMAC, ContinuousCMAC
+from cmac import DiscreteCMAC, ContinuousCMAC, RecurrentCMAC
 from metrics import Metrics
 
 
@@ -42,7 +42,7 @@ def main():
     test_sp = sample_points[70:]
 
     # Hyper-parameters
-    n_weights = 4
+    n_weights = 35
     generalization_factors = np.linspace(1, n_weights, n_weights, dtype=int)
     alpha = 1
 
@@ -86,7 +86,7 @@ def main():
     _,_,_ = discrete_metrics.get_maximum_mse()
     print("--------------------------")
     print("Best Time Score:")
-    gen_min_time,_,_ = discrete_metrics.get_maximum_traning_time()
+    gen_min_time,_,_ = discrete_metrics.get_minimum_training_time()
     print("--------------------------")
     print("Worst Time Score:")
     _,_,_ = discrete_metrics.get_maximum_traning_time()
@@ -112,6 +112,7 @@ def main():
                                     n_weights=n_weights, gen_factor=gen, overlap=overlap, mse_threshold=0.003)
 
                 mse, training_duration = continuous_model_buffer[model_key].train()
+                metric_dict['overlap'] = overlap
                 metric_dict['mse'] = mse
                 metric_dict['time'] = training_duration
 
@@ -131,7 +132,7 @@ def main():
     _,_,_ = continuous_metrics.get_maximum_mse()
     print("--------------------------")
     print("Best Time Score:")
-    gen_min_time,_,_ = continuous_metrics.get_maximum_traning_time()
+    gen_min_time,_,_ = continuous_metrics.get_minimum_training_time()
     print("--------------------------")
     print("Worst Time Score:")
     _,_,_ = continuous_metrics.get_maximum_traning_time()
@@ -139,12 +140,11 @@ def main():
     continuous_metrics.plot_training_time_accross_overlaps(n_weights, gen_min_time)
     print("\n\n")
 
-    sample_points = np.linspace(0, 2*np.pi, 1000)
+    sample_points = np.linspace(0, 2*np.pi, 100)
 
     discrete_predicted = []
     continuous_predicted =[]
     real_values = []
-
     for sample in list(sample_points):
         real_values.append(training_function(sample))
         discrete_predicted.append(discrete_model_buffer[(n_weights, disc_gen_min_mse, disc_overlap_min_mse)].predict(sample))
@@ -159,6 +159,7 @@ def main():
     plt.plot(sample_points, continuous_predicted, label='discrete cmac prediction')
     fig.legend()
 
+
     fig = plt.figure()        
     sns.set_style('darkgrid')
     fig.suptitle('Discrete CMAC, gen factor=' + str(disc_gen_min_mse) + ',overlap=' + str(disc_overlap_min_mse), fontsize=20)
@@ -172,3 +173,17 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+    # sample_points = np.linspace(0, 2*np.pi, 100)
+    # # Training data
+    # training_sp = sample_points[:75]
+    # # Test data
+    # test_sp = sample_points[75:]
+
+    # recurrent_cmac_model = RecurrentCMAC(train_samples=training_sp, test_samples=test_sp, train_function=training_function,
+    #                                 n_weights=35, gen_factor=5, overlap=2,min_y=-1, max_y=1, mse_threshold=0.003)
+
+    # mse = recurrent_cmac_model.train()
+    # print('mes: ', mse)

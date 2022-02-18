@@ -179,7 +179,7 @@ class Metrics:
         min_overlaps = []
         min_time = []
         gen_factors = []
-        for n_weights, weight_values in self.accuracies.items():
+        for n_weights, weight_values in self.training_times.items():
             for gen_factor, gen_f_values in weight_values.items():
                 overlaps = []
                 time = []
@@ -208,7 +208,7 @@ class Metrics:
         max_overlaps = []
         max_time = []
         gen_factors = []
-        for n_weights, weight_values in self.accuracies.items():
+        for n_weights, weight_values in self.training_times.items():
             for gen_factor, gen_f_values in weight_values.items():
                 overlaps = []
                 time = []
