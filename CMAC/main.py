@@ -1,15 +1,3 @@
-### DISCRETE CMAC ###
-
-# Train on 1-D function
-# * Tests effect of overlap on:
-#   - Generalization
-#   - Time to Converge
-
-# Conditions:
-# * 35 weights
-# * Sample function at 100 evenly spaced points (70 for training and 30 for testing)
-# NOTE: Report accuracy of CMAC only with the 30 test points
-
 from cProfile import label
 from random import sample
 import numpy as np
@@ -173,8 +161,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
 
     # sample_points = np.linspace(0, 2*np.pi, 100)
     # # Training data
