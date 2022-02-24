@@ -19,7 +19,11 @@ Build the workspace
 ```
 colcon build
 ```
-
+Set environment variables
+```
+echo 'export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/turtlebot3_ws/src/turtlebot3/turtlebot3_simulations/turtlebot3_gazebo/models' >> ~/.bashrc
+echo 'export TURTLEBOT3_MODEL=waffle_pi' >> ~/.bashrc
+```
 ## Run Teleoperation
 
 In one terminal launch the Turtlebot Gazebo world
