@@ -21,7 +21,7 @@ colcon build
 ```
 Set environment variables
 ```
-echo 'export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/turtlebot3_ws/src/turtlebot3/turtlebot3_simulations/turtlebot3_gazebo/models' >> ~/.bashrc
+echo 'export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/${ROS_DISTRO}/share/turtlebot3_gazebo/models' >> ~/.bashrc
 echo 'export TURTLEBOT3_MODEL=waffle_pi' >> ~/.bashrc
 ```
 ## Run Teleoperation
